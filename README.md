@@ -4,7 +4,7 @@
 [![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/fashberg/WThermostatBeca?include_prereleases&label=beta)](https://github.com/fashberg/WThermostatBeca/releases)
 [![GitHub download](https://img.shields.io/github/downloads/fashberg/WThermostatBeca/total.svg)](https://github.com/fashberg/WThermostatBeca/releases/latest)
 [![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/fashberg/WThermostatBeca)
-[![travis-ci-status](https://api.travis-ci.org/fashberg/WThermostatBeca.svg?branch=master)](https://travis-ci.org/github/fashberg/WThermostatBeca)
+[![Github Actions](https://img.shields.io/github/workflow/status/fashberg/WThermostatBeca/Build)](https://github.com/fashberg/WThermostatBeca/actions)
 
 Fork of <https://github.com/klausahrenberg/WThermostatBeca> with some new features.
 
@@ -154,9 +154,15 @@ Live WebLog Screen:
 
 ## Integration in Home Assistant
 
-![homeassistant](docs/images/homeassistant.png)  ![hass_discovery](docs/images/hass_discovery.png)
+![homeassistant](docs/images/homeassistant.png)
+![homeassistant](docs/images/hass_detail.png)
+![hass_discovery](docs/images/hass_discovery.png)
 
 ### Controlling BAC in HomeAssistant
+
+* Use Operation to Switch between 'heat', 'cool', 'fan_only' and 'off'
+* Use Preset to switch between 'None' (manual), 'Scheduler' and 'eco'
+* Changing temp disables scheduler and switches to preset 'None'
 
 ![homeassistant](docs/images/hass-bac.png)
 
@@ -213,15 +219,14 @@ climate:
     temperature_state_template: "{{value_json.targetTemperature}}"
     current_temperature_topic: "home/room/stat/things/thermostat/properties"
     current_temperature_template: "{{value_json.temperature}}"
-    away_mode_command_topic: "home/room/cmnd/things/thermostat/properties/ecoMode"
-    away_mode_state_topic: "home/room/stat/things/thermostat/properties"
-    away_mode_state_template: "{{value_json.ecoMode}}"
     mode_command_topic: "home/room/cmnd/things/thermostat/properties/mode"
     mode_state_topic: "home/room/stat/things/thermostat/properties"
     mode_state_template: "{{value_json.mode}}"
-    payload_on: true
-    payload_off: false
     modes: [ "heat", "auto", "off" ]
+    preset_mode_command_topic: "home/room/cmnd/things/thermostat/properties/preset"
+    preset_mode_state_topic: "home/room/stat/things/thermostat/properties"
+    preset_mode_value_template: "{{value_json.preset}}"
+    preset_modes: ["away"]
     min_temp: 5
     max_temp: 35
     temp_step: 0.5
@@ -256,12 +261,6 @@ climate:
     fan_mode_command_topic: "home/bedroom/cmnd/things/thermostat/properties/fanMode"
     fan_mode_state_topic: "home/bedroom/stat/things/thermostat/properties"
     fan_mode_state_template: "{{value_json.fanMode}}"
-    hold_command_topic: "home/bedroom/cmnd/things/thermostat/properties/holdState"
-    hold_state_topic: "home/bedroom/stat/things/thermostat/properties"
-    hold_state_template: "{{value_json.holdState}}"
-    hold_modes: [ "scheduler", "manual","eco" ]
-    payload_on: true
-    payload_off: false
     modes: [ "heat", "cool", "fan_only", "off" ]
     min_temp: 16
     max_temp: 32
@@ -280,10 +279,10 @@ climate:
   temperature_command_topic: "home/wohnzimmer/cmnd/things/thermostat/properties/targetTemperature"
   temperature_state_topic: "home/wohnzimmer/stat/things/thermostat/properties"
   current_temperature_topic: "home/wohnzimmer/stat/things/thermostat/properties"
-  away_mode_command_topic: "home/wohnzimmer/cmnd/things/thermostat/properties/ecoMode"
-  away_mode_state_topic: "home/wohnzimmer/stat/things/thermostat/properties"
   mode_command_topic: "home/wohnzimmer/cmnd/things/thermostat/properties/mode"
   mode_state_topic: "home/wohnzimmer/stat/things/thermostat/properties"
+  preset_mode_command_topic: "home/wohnzimmer/cmnd/things/thermostat/properties/preset"
+  preset_mode_state_topic: "home/wohnzimmer/stat/things/thermostat/properties"
   <<: &commonbeca
     payload_available: "Online"
     payload_not_available: "Offline"
@@ -292,9 +291,9 @@ climate:
     current_temperature_template: "{{value_json.temperature}}"
     mode_state_template: "{{value_json.mode}}"
     away_mode_state_template: "{{value_json.ecoMode}}"
-    payload_on: true
-    payload_off: false
     modes: [ "heat", "auto", "off" ]
+    preset_mode_value_template: "{{value_json.preset}}"
+    preset_modes: ["away"]
     min_temp: 5
     max_temp: 35
     temp_step: 0.5
@@ -310,6 +309,8 @@ climate:
   away_mode_state_topic: "home/flur/stat/things/thermostat/properties"
   mode_command_topic: "home/flur/cmnd/things/thermostat/properties/mode"
   mode_state_topic: "home/flur/stat/things/thermostat/properties"
+  preset_mode_command_topic: "home/flur/cmnd/things/thermostat/properties/preset"
+  preset_mode_state_topic: "home/flur/stat/things/thermostat/properties"
   <<: *commonbeca
 - platform: mqtt
   name: WC_Thermostat
@@ -322,6 +323,8 @@ climate:
   away_mode_state_topic: "home/wc/stat/things/thermostat/properties"
   mode_command_topic: "home/wc/cmnd/things/thermostat/properties/mode"
   mode_state_topic: "home/wc/stat/things/thermostat/properties"
+  preset_mode_command_topic: "home/wc/cmnd/things/thermostat/properties/preset"
+  preset_mode_state_topic: "home/wc/stat/things/thermostat/properties"
   <<: *commonbeca
 ```
 
@@ -340,7 +343,7 @@ There is also a detailed view available:
 
 ## Device-Functions
 
-### Json structures
+### JSON structures
 
 The software provides different messages:
 
@@ -482,6 +485,10 @@ mosquitto_pub -t "home/test/cmnd/things/thermostat/mcucommand" -m "55 aa 00 1c 0
 
 ```
 
+### MQTT Explorer
+
+For MQTT Troubleshooting i suggest MQTT Explorer, which can be found at <https://github.com/thomasnordquist/MQTT-Explorer>
+
 ## How it works
 
 ### Hardware and serial communication
@@ -512,7 +519,7 @@ Often the answer is: Because all internal routines (reading temperature, control
 
 Flash the original firmware (see installation). Write me a message with your exact model and which parameter was not correct. Maybe your MQTT-server received some unknown messages - this would be also helpful for me. Again: I have tested this only with model BHT-002-GBLW. If you have another device, don't expect that this is working directly.
 
-## Build this firmware from source
+## Build this firmware from source and contributing
 
 For building from sources and coding i suggest VS Code and PlatformIO. You can also use Gitpod.
 
@@ -530,11 +537,25 @@ git submodule update
 ```
 
 * Open the folder 'WThermostatBeca' in VS Code
-* Go to PlatformIO Icon
-* Click Build
-  * Binary Firmware can be found in build_output\firmware\wthermostat-1.xx-fas.bin (or -debug or -minimal)
+* Go to PlatformIO Alien Icon on the left
+* Open in Tree "wthermostat" and click General/Build
+  * Binary Firmware can be found in build_output/firmware/wthermostat-1.xx-fas.bin (or -debug or -minimal)
 
 All dependant arduino-libraries (DNSServer, EEPROM (for esp8266), ESP8266HTTPClient, ESP8266mDNS, AsyncWebServer, ESP8266WiFi, Hash, NTPClient, Time.) will be downloaded automatically (defined in platform.ini) and the necessary WAdapter library from <https://github.com/fashberg/WAdapter> (git submodule).
+
+You probably want to specify your own Port-Settings. Copy ``platformio_override.sample.ini`` to ``platformio_override.ini`` and define your stuff.
+
+#### Environments wthermostat / wthermostat-minimal / wthermostat-debug and bin.gz
+
+There are 3 environments:
+
+1. wthermostat: this is the default production environment.
+
+2. wthermostat-minimal: this is the minimal version. No MQTT and no Thermostat Support, meant for OTA Upgrading when standard is too small. After flashing minimal do an upgrade to normal.
+
+3. wthermostat-debug: this is the debug/development version.  DO NOT FLASH TO THERMOSTAT HARDWARE! There is debugging output to serial interface which will confuse Thermostat-MCU. Upload to USB-Connected development ESP8266 board (Node MCU or Wemos D1 Mini pro) and monitor the output in vscode/pio-monitor.
+
+bin vs bin.gz: You can directly upload a gzipped (compressed) firmware via OTA
 
 ### Cloud Development using Gitpod
 
@@ -556,10 +577,20 @@ You can download the firmware by right-clicking in the Project-Explorer the file
 * Get latest version and dependant libraries.
 ``git pull ; git pull --recurse-submodules``
 * Upgrade PlatformIO:
-``platformio upgrade --dev ; platformio update``
+``platformio upgrade --dev``
+* Upgrade Dependencies:
+``platformio pkg update ; platformio pkg install``
+* Build wthermostat:
+``pio run -e wthermostat``
+* Check/Lint wthermostat:
+``pio check -e wthermostat``
+* upload wthermostat via ip:
+``python pio/espupload.py -u <IpOfDevice> -f $SOURCE``
 
-### Special Build Versions
+### GitHub Actions, Pull-Requests
 
-* -Minimal environment: minimal version without thermostat, MQTT or WebThings support. Use only for intermediate Updating
-* -Debug environment: DO NOT FLASH TO THERMOSTAT. There is debugging output to serial interface which will confuse MCU
-  * Upload to USB-Connected development ESP8266 board (Node MCU or Wemos D1 Mini pro)
+After every push or pull-request the code is build automatically on github.
+
+Check out [/actions](/actions), you can also download the built-firmware for each commit at the bottom of the "Summary" at "Artifacts".
+
+Feel free the request a [PR](/pulls).
